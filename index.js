@@ -15,16 +15,15 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Defensive FAQ lookup in "Business Info" table
+// FAQ lookup in "Business Info" table with "Common Questions" column
 async function findBusinessInfoAnswer(userMsg) {
   const result = await pool.query('SELECT * FROM "Business Info"');
-  // Defensive matching: check for existence and type
   const found = result.rows.find(row =>
-    typeof row.common_questions === 'string' &&
-    row.common_questions.length > 0 &&
-    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
+    typeof row["Common Questions"] === 'string' &&
+    row["Common Questions"].length > 0 &&
+    userMsg.toLowerCase().includes(row["Common Questions"].toLowerCase())
   );
-  return found ? found.answers : null;
+  return found ? found["Answers"] : null;
 }
 
 // Ensure chat_memory table exists
@@ -44,7 +43,6 @@ async function getChatHistory(contactId, systemPrompt) {
   if (result.rows.length > 0) {
     return result.rows[0].messages;
   }
-  // If new user, start with system prompt
   return [{ role: "system", content: systemPrompt }];
 }
 
@@ -100,8 +98,6 @@ app.post("/chat", async (req, res) => {
 
     // 2. Otherwise, proceed to OpenAI
     let messages = await getChatHistory(contactId, SYSTEM_PROMPT);
-
-    // Optional: limit to last 20 messages
     if (messages.length > 20) {
       messages = [messages[0], ...messages.slice(-19)];
     }
@@ -110,7 +106,7 @@ app.post("/chat", async (req, res) => {
 
     // OpenAI API call
     const chatRes = await openai.chat.completions.create({
-      model: "gpt-4o", // Use "gpt-4o" for best results
+      model: "gpt-4o",
       messages: messages,
       max_tokens: 200,
       temperature: 1,
@@ -121,11 +117,7 @@ app.post("/chat", async (req, res) => {
     });
 
     const reply = chatRes.choices?.[0]?.message?.content || "No reply generated.";
-
-    // Add AI reply to memory
     messages.push({ role: "assistant", content: reply });
-
-    // Save updated history
     await saveChatHistory(contactId, messages);
 
     res.json({ reply });
