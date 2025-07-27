@@ -7,6 +7,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.post('/chat', async (req, res) => {
   try {
+    console.log('Received request:', req.body);
     const userMsg = req.body.message || '';
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -24,11 +25,23 @@ app.post('/chat', async (req, res) => {
         }
       }
     );
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+    console.log('OpenAI response:', response.data);
+    if (
+      response.data &&
+      response.data.choices &&
+      response.data.choices[0] &&
+      response.data.choices[0].message &&
+      response.data.choices[0].message.content
+    ) {
+      const reply = response.data.choices[0].message.content;
+      res.json({ reply });
+    } else {
+      console.error('OpenAI API returned unexpected:', response.data);
+      res.status(500).json({ error: response.data });
+    }
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json({ error: 'Something went wrong.' });
+    console.error('Caught error:', err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data || err.message });
   }
 });
 
