@@ -95,7 +95,7 @@ app.post("/chat", async (req, res) => {
 
     // Call OpenAI
     const chatRes = await openai.chat.completions.create({
-      model: "GPT-4.1 nano",
+      model: "gpt-4.1-mini",
       messages: messages,
       max_tokens: 1024,
       temperature: 1,
