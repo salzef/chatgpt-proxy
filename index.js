@@ -47,3 +47,24 @@ app.post('/chat', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const response = await openai.responses.create({
+  prompt: {
+    "id": "pmpt_68858ed218b881969f6bb53d871d2fed0ddcd377b2cd4d02",
+    "version": "1"
+  },
+  input: [],
+  text: {
+    "format": {
+      "type": "text"
+    }
+  },
+  reasoning: {},
+  max_output_tokens: 2048,
+  store: true
+});
