@@ -8,16 +8,20 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 app.post('/chat', async (req, res) => {
   try {
     const userMsg = req.body.message || '';
-    const promptId = req.body.prompt_id; // The prompt ID you send from HighLevel
+    const promptId = req.body.prompt_id; // Grab prompt_id from the request
 
-    // Build OpenAI API payload with prompt id
+    // Build the payload for OpenAI API
     const payload = {
-      prompt: promptId ? { id: promptId } : undefined, // Only send if provided
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'user', content: userMsg }
       ]
     };
+
+    // If promptId is provided, include it as per OpenAI docs
+    if (promptId) {
+      payload.prompt = { id: promptId };
+    }
 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -43,6 +47,7 @@ app.post('/chat', async (req, res) => {
       res.status(500).json({ error: response.data });
     }
   } catch (err) {
+    console.error('Error:', err.response?.data || err.message);
     res.status(500).json({ error: err.response?.data || err.message });
   }
 });
