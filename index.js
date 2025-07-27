@@ -9,13 +9,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Connect to PostgreSQL (Railway sets DATABASE_URL)
+// Connect to PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// Create table on startup (optional safety)
+// (Optional but recommended) Create table on startup if not exists
 pool.query(`
   CREATE TABLE IF NOT EXISTS chat_memory (
     contact_id VARCHAR(128) PRIMARY KEY,
@@ -45,7 +45,7 @@ async function saveChatHistory(contactId, messages) {
   );
 }
 
-// Your chatbot's instructions:
+// Chatbot instructions
 const SYSTEM_PROMPT = `
 You are a friendly, sales-focused chatbot for Detailers Growth in Dallas, TX.
 Your goals:
@@ -63,18 +63,18 @@ app.post("/chat", async (req, res) => {
     if (!contactId) return res.status(400).json({ error: "Missing contact_id" });
     const userMsg = req.body.message || "";
 
-    // 1. Get previous history or start with system prompt
+    // Load previous history or start with system prompt
     let messages = await getChatHistory(contactId, SYSTEM_PROMPT);
 
-    // Optional: limit to last 20 messages to stay within OpenAI token limits
+    // Optional: limit to last 20 messages
     if (messages.length > 20) {
       messages = [messages[0], ...messages.slice(-19)];
     }
 
-    // 2. Add the new user message
+    // Add new user message
     messages.push({ role: "user", content: userMsg });
 
-    // 3. Call OpenAI
+    // Call OpenAI
     const chatRes = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: messages,
@@ -88,10 +88,10 @@ app.post("/chat", async (req, res) => {
 
     const reply = chatRes.choices?.[0]?.message?.content || "No reply generated.";
 
-    // 4. Add the AI reply to memory
+    // Add AI reply to memory
     messages.push({ role: "assistant", content: reply });
 
-    // 5. Save updated memory
+    // Save updated history
     await saveChatHistory(contactId, messages);
 
     res.json({ reply });
