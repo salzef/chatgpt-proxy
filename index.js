@@ -21,7 +21,7 @@ async function findBusinessInfoAnswer(userMsg) {
   const result = await pool.query('SELECT * FROM "Business Info"');
   // Simple matching
   const found = result.rows.find(row =>
-    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
+    userMsg.toLowerCase().includes(row.Common_Cuestions.toLowerCase())
   );
   return found ? found.answers : null;
 }
