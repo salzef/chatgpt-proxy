@@ -98,8 +98,6 @@ app.post("/chat", async (req, res) => {
       messages = [messages[0], ...messages.slice(-19)];
     }
 
-    const userMsg = req.body.message || "";
-
 // Try to answer with Business Info table first
 const infoAnswer = await findBusinessInfoAnswer(userMsg);
 if (infoAnswer) {
