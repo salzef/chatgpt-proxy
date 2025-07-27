@@ -85,10 +85,10 @@ IMPORTANT: If you do not follow these steps and rules, you will not fulfill your
 
 // Main chat endpoint
 app.post("/chat", async (req, res) => {
-  try {
-    const contactId = req.body.contact_id;
-    if (!contactId) return res.status(400).json({ error: "Missing contact_id" });
-    const userMsg = req.body.message || "";
+  const userMsg = req.body.message || "";
+  const infoAnswer = await findBusinessInfoAnswer(userMsg);
+  if (infoAnswer) {
+    return res.json({ reply: infoAnswer });
 
     // Load previous history or start with system prompt
     let messages = await getChatHistory(contactId, SYSTEM_PROMPT);
@@ -97,13 +97,6 @@ app.post("/chat", async (req, res) => {
     if (messages.length > 20) {
       messages = [messages[0], ...messages.slice(-19)];
     }
-
-// Try to answer with Business Info table first
-const infoAnswer = await findBusinessInfoAnswer(userMsg);
-if (infoAnswer) {
-  // If you find a matching answer, respond right away
-  return res.json({ reply: infoAnswer });
-}
 
     // Add new user message
     messages.push({ role: "user", content: userMsg });
