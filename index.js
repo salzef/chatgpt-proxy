@@ -51,8 +51,10 @@ Reminder: Your goal is to act as a sales-focused ceramic coating chatbot—alway
 app.post("/chat", async (req, res) => {
   try {
     const userMsg = req.body.message || "";
+    // If you want to allow prompt_id, add: const promptId = req.body.prompt_id;
+
     const chatRes = await openai.chat.completions.create({
-      model: "gpt-4o", // or "gpt-4.1-nano" if available to you
+      model: "gpt-4o", // Use "gpt-4o" or another model available to your account
       messages: [
         {
           role: "system",
@@ -64,7 +66,7 @@ app.post("/chat", async (req, res) => {
         },
       ],
       temperature: 1,
-      max_tokens: 1024, // Changed to correct param name for OpenAI SDK
+      max_tokens: 1024, // OpenAI SDK v4 expects max_tokens, not max_completion_tokens
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
@@ -75,4 +77,9 @@ app.post("/chat", async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error("Error:", err.response?.data || err.message || err);
-    res.status(500).json({ e
+    res.status(500).json({ error: err.response?.data || err.message || "Unknown error" });
+  }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`✅ Server running on port ${port}`));
