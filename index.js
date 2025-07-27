@@ -9,22 +9,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Connect to PostgreSQL
+// Connect to PostgreSQL for chat memory
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
-// FAQ lookup in "Business Info" table with "Common Questions" column
-async function findBusinessInfoAnswer(userMsg) {
-  const result = await pool.query('SELECT * FROM "Business Info"');
-  const found = result.rows.find(row =>
-    typeof row["Common Questions"] === 'string' &&
-    row["Common Questions"].length > 0 &&
-    userMsg.toLowerCase().includes(row["Common Questions"].toLowerCase())
-  );
-  return found ? found["Answers"] : null;
-}
 
 // Ensure chat_memory table exists
 pool.query(`
@@ -43,6 +32,7 @@ async function getChatHistory(contactId, systemPrompt) {
   if (result.rows.length > 0) {
     return result.rows[0].messages;
   }
+  // If new user, start with system prompt
   return [{ role: "system", content: systemPrompt }];
 }
 
@@ -90,13 +80,7 @@ app.post("/chat", async (req, res) => {
     const contactId = req.body.contact_id;
     const userMsg = req.body.message || "";
 
-    // 1. Try to answer with Business Info table
-    const infoAnswer = await findBusinessInfoAnswer(userMsg);
-    if (infoAnswer) {
-      return res.json({ reply: infoAnswer });
-    }
-
-    // 2. Otherwise, proceed to OpenAI
+    // Load previous history or start with system prompt
     let messages = await getChatHistory(contactId, SYSTEM_PROMPT);
     if (messages.length > 20) {
       messages = [messages[0], ...messages.slice(-19)];
@@ -106,7 +90,7 @@ app.post("/chat", async (req, res) => {
 
     // OpenAI API call
     const chatRes = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // or your preferred model
       messages: messages,
       max_tokens: 200,
       temperature: 1,
