@@ -15,13 +15,14 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// FAQ lookup in "Business Info" table
+// Defensive FAQ lookup in "Business Info" table
 async function findBusinessInfoAnswer(userMsg) {
-  // Quotes for table name because of space!
   const result = await pool.query('SELECT * FROM "Business Info"');
-  // Simple matching
+  // Defensive matching: check for existence and type
   const found = result.rows.find(row =>
-    userMsg.toLowerCase().includes(row.Common_Cuestions.toLowerCase())
+    typeof row.common_questions === 'string' &&
+    row.common_questions.length > 0 &&
+    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
   );
   return found ? found.answers : null;
 }
@@ -109,7 +110,7 @@ app.post("/chat", async (req, res) => {
 
     // OpenAI API call
     const chatRes = await openai.chat.completions.create({
-      model: "gpt-4o", // Use "gpt-4o" for best results as of 2025
+      model: "gpt-4o", // Use "gpt-4o" for best results
       messages: messages,
       max_tokens: 200,
       temperature: 1,
