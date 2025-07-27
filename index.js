@@ -1,3 +1,12 @@
+async function findBusinessInfoAnswer(userMsg) {
+  const result = await pool.query("SELECT * FROM \"Business Info\"");
+  // Simple match: does user message contain any of the common_questions
+  const found = result.rows.find(row =>
+    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
+  );
+  return found ? found.answers : null;
+}
+
 const express = require("express");
 const { Pool } = require("pg");
 const OpenAI = require("openai");
