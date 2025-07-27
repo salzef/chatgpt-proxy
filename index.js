@@ -1,12 +1,3 @@
-async function findBusinessInfoAnswer(userMsg) {
-  const result = await pool.query("SELECT * FROM \"Business Info\"");
-  // Simple match: does user message contain any of the common_questions
-  const found = result.rows.find(row =>
-    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
-  );
-  return found ? found.answers : null;
-}
-
 const express = require("express");
 const { Pool } = require("pg");
 const OpenAI = require("openai");
@@ -23,6 +14,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+async function findBusinessInfoAnswer(userMsg) {
+  const result = await pool.query("SELECT * FROM \"Business Info\"");
+  // Simple match: does user message contain any of the common_questions
+  const found = result.rows.find(row =>
+    userMsg.toLowerCase().includes(row.common_questions.toLowerCase())
+  );
+  return found ? found.answers : null;
+}
 
 // (Optional but recommended) Create table on startup if not exists
 pool.query(`
@@ -97,6 +97,15 @@ app.post("/chat", async (req, res) => {
     if (messages.length > 20) {
       messages = [messages[0], ...messages.slice(-19)];
     }
+
+    const userMsg = req.body.message || "";
+
+// Try to answer with Business Info table first
+const infoAnswer = await findBusinessInfoAnswer(userMsg);
+if (infoAnswer) {
+  // If you find a matching answer, respond right away
+  return res.json({ reply: infoAnswer });
+}
 
     // Add new user message
     messages.push({ role: "user", content: userMsg });
