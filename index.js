@@ -8,17 +8,16 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 app.post('/chat', async (req, res) => {
   try {
     const userMsg = req.body.message || '';
-    const promptId = req.body.prompt_id; // Grab prompt_id from the request
+    const promptId = req.body.prompt_id;
 
-    // Build the payload for OpenAI API
+    // Use gpt-4o for prompt library support
     const payload = {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: [
         { role: 'user', content: userMsg }
       ]
     };
 
-    // If promptId is provided, include it as per OpenAI docs
     if (promptId) {
       payload.prompt = { id: promptId };
     }
